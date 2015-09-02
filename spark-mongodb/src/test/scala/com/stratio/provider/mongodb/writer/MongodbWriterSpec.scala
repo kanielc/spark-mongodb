@@ -108,7 +108,7 @@ with TestBsonData {
           "att2" : 2.0 ,
           "att1" : 1}""").asInstanceOf[DBObject])
 
-  val updateDbObject = List(
+  val updatedbObject = List(
     JSON.parse(
       """{ "att5" : [ 1 , 2 , 3] ,
           "att4" :  null  ,
@@ -116,6 +116,14 @@ with TestBsonData {
           "att6" : { "att61" : 1 , "att62" :  null } ,
           "att2" : 2.0 ,
           "att1" : 2}""").asInstanceOf[DBObject])
+
+  val updatedbObject2 = List(
+    JSON.parse(
+      """{
+           "att2" : 2.0 ,
+           "$addToSet": { "att5": 4 },
+           "$set": { "att4": "c'est moi" }
+         }""").asInstanceOf[DBObject])
 
 
   behavior of "A writer"
@@ -246,7 +254,7 @@ with TestBsonData {
 
       val dbOIterator = listDbObject.iterator
 
-      val dbUpdateIterator = updateDbObject.iterator
+      val dbUpdateIterator = updatedbObject.iterator
 
       mongodbBatchWriter.saveWithPk(dbOIterator)
 
@@ -269,7 +277,16 @@ with TestBsonData {
       dbCursor2.iterator().toList.forall { case obj: BasicDBObject =>
         obj.getInt("att1") == 2
       } should be (true)
+      
+      // it should handle when the keys are all operators (so an upsert-update)
+      val upsertUpdateIterator = updatedbObject2.iterator
+      mongodbBatchWriter.saveWithPk(upsertUpdateIterator)
 
+      val dbCursor3 = dbCollection.find(MongoDBObject("att3" -> "holo"))
+
+      dbCursor3.iterator().toList.forall { case obj: BasicDBObject =>
+        obj.getString("att4") == "c'est moi" && obj.get("att5").asInstanceOf[BasicDBList].contains(4)
+      } should be (true)
     }
   }
 }

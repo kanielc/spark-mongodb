@@ -43,7 +43,13 @@ class MongodbBatchWriter(
       group.foreach { element =>
         if (idFieldConfig.isDefined || pkConfig.isDefined) {
           val query = getUpdateQuery(element, pkConfig, idFieldConfig)
-          if (query.isEmpty) bulkOperation.insert(element) else bulkOperation.find(query).upsert().replaceOne(element)
+          val isUpdate = element.keys.forall{ key => key == "_id" || idFieldConfig == Some(key) || key.startsWith("$") }
+          if (query.isEmpty) bulkOperation.insert(element)
+          else if (isUpdate) {
+            idFieldConfig.foreach(element.remove)
+            element.remove("_id")
+            bulkOperation.find(query).upsert().updateOne(element)
+          } else bulkOperation.find(query).upsert().replaceOne(element)
         } else bulkOperation.insert(element)
       }
       bulkOperation.execute(config[WriteConcern](MongodbConfig.WriteConcern))
