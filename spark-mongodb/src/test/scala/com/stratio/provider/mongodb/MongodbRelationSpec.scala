@@ -19,10 +19,15 @@
 package com.stratio.provider.mongodb
 
 import com.mongodb.WriteConcern
+import com.stratio.provider.DeepConfig
+import com.stratio.provider.DeepConfig.Property
+import org.apache.spark.sql.test.TestSQLContext
 import org.apache.spark.sql.types._
 import org.scalatest.{FlatSpec, Matchers}
 
 class MongodbRelationSpec extends FlatSpec
+with MongoEmbedDatabase
+with TestBsonData
 with Matchers {
 
   private val host: String = "localhost"
@@ -77,6 +82,17 @@ with Matchers {
         new StructField(
           "att1",IntegerType,false))))
 
+  }
+
+  it should "be considered equal when given same specs" in {
+    withEmbedMongoFixture(complexFieldAndType1) { mongodbProc =>
+      val testConfig2 = new DeepConfig {
+        override val properties: Map[Property, Any] = Map(testConfig.properties.toSeq: _*)
+      }
+      val rel1 = new MongodbRelation(testConfig)(TestSQLContext)
+      val rel2 = new MongodbRelation(testConfig2)(TestSQLContext)
+      rel1 shouldEqual rel2
+    }
   }
 
 }

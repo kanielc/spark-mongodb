@@ -18,6 +18,7 @@
 
 package com.stratio.provider.mongodb
 
+import com.google.common.base.Objects
 import com.stratio.provider.DeepConfig
 import com.stratio.provider.mongodb.partitioner.MongodbPartitioner
 import com.stratio.provider.mongodb.rdd.MongodbRDD
@@ -40,8 +41,8 @@ import org.apache.spark.sql.types._
  * @param sqlContext An existing Spark SQL context.
  */
 class MongodbRelation(
-  config: DeepConfig,
-  schemaProvided: Option[StructType] = None)(
+  val config: DeepConfig,
+  val schemaProvided: Option[StructType] = None)(
   @transient val sqlContext: SQLContext) extends BaseRelation
 with PrunedFilteredScan with InsertableRelation {
 
@@ -92,6 +93,12 @@ with PrunedFilteredScan with InsertableRelation {
     data.saveToMongodb(config)
   }
 
+  override def equals(other: Any): Boolean = other match {
+    case that: MongodbRelation => config.properties == that.config.properties && schemaProvided == that.schemaProvided
+    case _ => false
+  }
+
+  override def hashCode(): Int = Objects.hashCode(config, schemaProvided)
 }
 
 object MongodbRelation {
