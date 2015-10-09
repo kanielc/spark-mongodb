@@ -21,6 +21,7 @@ package com.stratio.provider.mongodb.schema
 import com.mongodb.casbah.Imports._
 import com.stratio.provider.mongodb.rdd.MongodbRDD
 import com.stratio.provider.schema.SchemaProvider
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.analysis.HiveTypeCoercion
 import org.apache.spark.sql.types._
@@ -31,8 +32,8 @@ import org.apache.spark.sql.types._
  * @param samplingRatio Sampling ratio used to scan the RDD and extract
  *                      used fields.
  */
-case class MongodbSchema(
-  rdd: MongodbRDD,
+case class MongodbSchema[T <: RDD[DBObject]](
+  rdd: T,
   samplingRatio: Double) extends SchemaProvider with Serializable {
 
   override def schema(): StructType = {
